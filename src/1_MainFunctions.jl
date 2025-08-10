@@ -97,6 +97,7 @@ A function for finding the fixed point of another function
  *  `MaxM` - This is the maximum number of saved iterates that are used in the Anderson algorithm. It has no effect if another Algorithm is chosen. Note that the number of previous iterates that will actually be used is the minimum of MaxIter, the dimensionality of the f's vector and the number of inputs that have been tried to  previously (the width of the Outputs matrix at each given stage of the algorithm). If PrintReports = TRUE, the number of previous iterates actually used is reported as the algorithm is running.
  *  `ExtrapolationPeriod` - This is the number of simple iterates to perform before extrapolating. This is used for the MPE, RRE, VEA and SEA Algorithms and has no effect if another Algorithm is chosen Where an epsilon algorithm is used this should be a multiple of 2, ie (4,6,8,etc).
  *  `Dampening` - This is the dampening parameter. By default it is 1 which means no dampening takes place. It can also be less than 1 (indicating dampening) or more than 1 (indicating extrapolation).
+ * `Dampening_With_Input` - This is a boolean that indicates whether the dampening parameter should be multiplied by the input (if true) or the output of the most recent iterate.
  *  `PrintReports` - This is a boolean describing whether to print ongoing ConvergenceMetric values for each iterate.
  *  `ReportingSigFig` - This is the number of significant figures that will be used in printing the convergence values to the console (only if PrintReports is TRUE).
  *  `ReplaceInvalids` - Sometimes an acceleration algorithm proposed a vector with an invalid coordinate (NaN, Inf or missing). This parameter can be set to :ReplaceInvalids (to replace invalid coordinates by the simple iterate values), :ReplaceVector (to replace entire vector with a simple iterate) or :NoAction (where an imminent error will occur).
@@ -129,38 +130,38 @@ A function for finding the fixed point of another function
 """
 function fixed_point(func::Function, previous_FixedPointResults::FixedPointResults;
                     Algorithm::Symbol = :Anderson,  ConvergenceMetric::Function  = supnorm(input, output) = maximum(abs.(output .- input)),
-                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0),
+                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0), Dampening_With_Input::Bool = false,
                     PrintReports::Bool = false, ReportingSigFig::Integer = Integer(10), ReplaceInvalids::Symbol = :NoAction, ConditionNumberThreshold::Real = 1e3, quiet_errors::Bool = false)
     Inputs = previous_FixedPointResults.Inputs_
     Outputs = previous_FixedPointResults.Outputs_
     side_products = previous_FixedPointResults.Other_Output_
     return fixed_point(func, Inputs; Outputs = Outputs, Algorithm = Algorithm, ConvergenceMetric = ConvergenceMetric, ConvergenceMetricThreshold = ConvergenceMetricThreshold,
-                       MaxIter = MaxIter, MaxM = MaxM, ExtrapolationPeriod = ExtrapolationPeriod, Dampening = Dampening, PrintReports = PrintReports, ReportingSigFig = ReportingSigFig,
+                       MaxIter = MaxIter, MaxM = MaxM, ExtrapolationPeriod = ExtrapolationPeriod, Dampening = Dampening, Dampening_With_Input = Dampening_With_Input, PrintReports = PrintReports, ReportingSigFig = ReportingSigFig,
                        ReplaceInvalids = ReplaceInvalids, ConditionNumberThreshold = ConditionNumberThreshold, quiet_errors = quiet_errors, other_outputs = side_products)
 end
 function fixed_point(func::Function, Inputs::Array{T, 1};
                     Algorithm::Symbol = :Anderson,  ConvergenceMetric::Function  = supnorm(input, output) = maximum(abs.(output .- input)),
-                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0),
+                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0), Dampening_With_Input::Bool = false,
                     PrintReports::Bool = false, ReportingSigFig::Integer = Integer(10), ReplaceInvalids::Symbol = :NoAction, ConditionNumberThreshold::Real = 1e3, quiet_errors::Bool = false) where T<:Real
     Inputs2 = Array{Float64, 2}(undef,size(Inputs)[1],1)
     Inputs2[:,1] = Inputs
     return fixed_point(func, Inputs2; Algorithm = Algorithm, ConvergenceMetric = ConvergenceMetric, ConvergenceMetricThreshold = ConvergenceMetricThreshold,
-                       MaxIter = MaxIter, MaxM = MaxM, ExtrapolationPeriod = ExtrapolationPeriod, Dampening = Dampening, PrintReports = PrintReports, ReportingSigFig = ReportingSigFig,
+                       MaxIter = MaxIter, MaxM = MaxM, ExtrapolationPeriod = ExtrapolationPeriod, Dampening = Dampening, Dampening_With_Input = Dampening_With_Input, PrintReports = PrintReports, ReportingSigFig = ReportingSigFig,
                        ReplaceInvalids = ReplaceInvalids, ConditionNumberThreshold = ConditionNumberThreshold, quiet_errors = quiet_errors)
 end
 function fixed_point(func::Function, Inputs::Real;
                     Algorithm::Symbol = :Anderson,  ConvergenceMetric::Function  = supnorm(input, output) = maximum(abs.(output .- input)),
-                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0),
+                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0), Dampening_With_Input::Bool = false,
                     PrintReports::Bool = false, ReportingSigFig::Integer = Integer(10), ReplaceInvalids::Symbol = :NoAction, ConditionNumberThreshold::Real = 1e3, quiet_errors::Bool = false)
     Inputs2 = Array{typeof(Inputs), 2}(undef,1,1)
     Inputs2[1,1] = Inputs
     return fixed_point(func, Inputs2; Algorithm = Algorithm, ConvergenceMetric = ConvergenceMetric, ConvergenceMetricThreshold = ConvergenceMetricThreshold,
-                       MaxIter = MaxIter, MaxM = MaxM, ExtrapolationPeriod = ExtrapolationPeriod, Dampening = Dampening, PrintReports = PrintReports, ReportingSigFig = ReportingSigFig,
+                       MaxIter = MaxIter, MaxM = MaxM, ExtrapolationPeriod = ExtrapolationPeriod, Dampening = Dampening, Dampening_With_Input = Dampening_With_Input, PrintReports = PrintReports, ReportingSigFig = ReportingSigFig,
                        ReplaceInvalids = ReplaceInvalids, ConditionNumberThreshold = ConditionNumberThreshold, quiet_errors = quiet_errors)
 end
 function fixed_point(func::Function, Inputs::Array{T, 2}; Outputs::Array{<:Real,2} = Array{T,2}(undef,size(Inputs)[1],0),
                     Algorithm::Symbol = :Anderson,  ConvergenceMetric::Function  = supnorm(input, output) = maximum(abs.(output .- input)),
-                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0),
+                    ConvergenceMetricThreshold::Real = 1e-10, MaxIter::Integer = Integer(1000), MaxM::Integer = Integer(10), ExtrapolationPeriod::Integer = Integer(7), Dampening::Real = AbstractFloat(1.0), Dampening_With_Input::Bool = false,
                     PrintReports::Bool = false, ReportingSigFig::Integer = Integer(10), ReplaceInvalids::Symbol = :NoAction, ConditionNumberThreshold::Real = 1e3, quiet_errors::Bool = false, other_outputs::Union{Missing,NamedTuple} = missing) where T<:Real
     # This code first tests if the input point is a fixed point. Then if it is not a while loop runs to try to find a fixed point.
     if (ConditionNumberThreshold < 1) error("ConditionNumberThreshold must be at least 1.")  end
@@ -222,7 +223,7 @@ function fixed_point(func::Function, Inputs::Array{T, 2}; Outputs::Array{<:Real,
         # Generating new input and output.
         NewInputFunctionReturn = fixed_point_new_input(Inputs, Outputs, Algorithm; MaxM = MaxM,
                                      SimpleStartIndex = SimpleStartIndex,ExtrapolationPeriod = ExtrapolationPeriod,
-                                     Dampening = Dampening, ConditionNumberThreshold = ConditionNumberThreshold,
+                                     Dampening = Dampening, Dampening_With_Input = Dampening_With_Input, ConditionNumberThreshold = ConditionNumberThreshold,
                                      PrintReports = PrintReports, ReplaceInvalids = ReplaceInvalids)
         if PrintReports & (Algorithm != :Anderson)
             print(lpad("",42))
@@ -247,7 +248,7 @@ end
 
 """
     fixed_point_new_input(Inputs::AbstractArray{T,2}, Outputs::AbstractArray{T,2}, Algorithm::Symbol = :Anderson;
-                               MaxM::Integer = 10, SimpleStartIndex::Integer = 1, ExtrapolationPeriod::Integer = 1, Dampening::S = AbstractFloat(1),
+                               MaxM::Integer = 10, SimpleStartIndex::Integer = 1, ExtrapolationPeriod::Integer = 1, Dampening::S = AbstractFloat(1), Dampening_With_Input::Bool = false,
                                ConditionNumberThreshold::R = AbstractFloat(1000), PrintReports::Bool = false, ReplaceInvalids::InvalidReplacement = :NoAction) where R<:Real where S<:Real where T<:Real
 
 This function takes the previous inputs and outputs from the fixed_point function and determines what vector to try next in seeking a fixed point.
@@ -259,6 +260,7 @@ This function takes the previous inputs and outputs from the fixed_point functio
 * `SimpleStartIndex` - This is the index for what column in the input/output matrices did the algorithm start doing simple iterates without jumps. This is used for all Algorithms except the simple and Anderson Algorithms where it has no effect.
 * `ExtrapolationPeriod` - This is the number of simple iterates to perform before extrapolating. This is used for the MPE, RRE, VEA and SEA Algorithms and has no effect if another Algorithm is chosen.
 * `Dampening` - This is the dampening parameter. By default it is 1 which means no dampening takes place. It can also be less than 1 (indicating dampening) or more than 1 (indicating extrapolation).
+* `Dampening_With_Input` - This is a boolean that indicates whether the dampening parameter should be multiplied by the input (if true) or the output of the most recent iterate.
 * `ConditionNumberThreshold` - This is what threshold should be chosen to drop previous iterates if the matrix is ill conditioned. Only used in Anderson acceleration.
 * `PrintReports` - This is a boolean describing whether to print ongoing ConvergenceMetric values for each iterate.
 ### Returns
@@ -272,7 +274,7 @@ This function takes the previous inputs and outputs from the fixed_point functio
     NewGuessAitken = fixed_point_new_input(A[:Inputs], A[:Outputs], Algorithm = :Aitken)
 """
 function fixed_point_new_input(Inputs::AbstractArray{T,2}, Outputs::AbstractArray{T,2}, Algorithm::Symbol = :Anderson;
-                               MaxM::Integer = 10, SimpleStartIndex::Integer = 1, ExtrapolationPeriod::Integer = 1, Dampening::S = AbstractFloat(1),
+                               MaxM::Integer = 10, SimpleStartIndex::Integer = 1, ExtrapolationPeriod::Integer = 1, Dampening::S = AbstractFloat(1), Dampening_With_Input::Bool = false,
                                ConditionNumberThreshold::R = AbstractFloat(1000), PrintReports::Bool = false, ReplaceInvalids::Symbol = :NoAction) where R<:Real where S<:Real where T<:Real
     CompletedIters = size(Outputs)[2]
     simple_iterate = Outputs[:,CompletedIters]
@@ -390,7 +392,7 @@ function fixed_point_new_input(Inputs::AbstractArray{T,2}, Outputs::AbstractArra
             proposed_input = simple_iterate
         end
     end
-    return @. (Dampening .* proposed_input) .+ ((1-Dampening) .* simple_iterate)
+    return @. (Dampening .* proposed_input) .+ ((1-Dampening) .* (Dampening_With_Input ? Inputs[:,end] : simple_iterate))
 end
 
 """
